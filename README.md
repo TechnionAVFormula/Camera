@@ -26,13 +26,13 @@
 ## Cones
 |Competition | Date | Cone details|
 |--|--|--|
-|FS NL | 05-09.07.2020 |  |
-|FS ATA | 15-19.07.2020 |  |
-|FS Switzerland | 15-19.07.2020 |  |
-|FS UK | 22-26.07.2020 |  |
-|FS CZ | 20-26.07.2020 |  |
-|FSA | 26-30.07.2020 |  |
-|FS east | 04-09.08.2020 |  |
-|FSG | 17-23.08.2020  | 2 types: Big- 285mm x 285mm x 505 mm <br/> Small- 228mm x 228mm x 325mm| 
-|FS Spain | 25-30.08.2020 |  | 
-|FS Russia | 10-13.09.2020 |  |
+|FS NL | 05.07.2020 - 09.07.2020 |  |
+|FS ATA | 15.07.2020 - 19.07.2020 |  |
+|FS Switzerland | 15.07.2020 - 19.07.2020 |  |
+|FS UK | 22.07.2020 - 26.07.2020 |  |
+|FS CZ | 20.07.2020 - 26.07.2020 |  |
+|FSA | 26.07.2020 - 30.07.2020 |  |
+|FS east | 04.08.2020 - 09.08.2020 |  |
+|FSG |17.08.2020 - 23.08.2020| 2 types:<br/>Big- 285mm x 285mm x 505 mm<br/>Small- 228mm x 228mm x 325mm<br/>3 Colors:<br/>Orange with white stripe, Yellow with black stripe, Blue with white stripe| 
+|FS Spain | 25.08.2020 - 30.08.2020 |  | 
+|FS Russia | 10.09.2020 - 13.09.2020 |  |
