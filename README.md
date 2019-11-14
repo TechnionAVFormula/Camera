@@ -22,6 +22,7 @@
 - [ ] Literature summary, What has be done by other teams.
 - [ ] Check ZED camera intergration into Xavier hardware.
 - [ ] Check Relevant topics in rulebook
+- [ ] Create a formatted dataset
 
 ## Cones
 |Competition | Date | Cone details|
