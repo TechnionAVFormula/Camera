@@ -26,13 +26,13 @@
 ## Cones
 |Competition | Date | Cone details|
 |--|--|--|
-|FSG |  |  |
-|FS NL |  |  |
-|FS ATA |  |  |
-|FS Switzerland |  |  |
-|FS UK |  |  |
-|FS CZ |  |  |
-|FSA |  |  |
-|FS east |  |  |
-|FS Spain |  |  | 
-|FS Russia |  |  |
+|FS NL | 05-09.07.2020 |  |
+|FS ATA | 15-19.07.2020 |  |
+|FS Switzerland | 15-19.07.2020 |  |
+|FS UK | 22-26.07.2020 |  |
+|FS CZ | 20-26.07.2020 |  |
+|FSA | 26-30.07.2020 |  |
+|FS east | 04-09.08.2020 |  |
+|FSG | 17-23.08.2020  |  |
+|FS Spain | 25-30.08.2020 |  | 
+|FS Russia | 10-13.09.2020 |  |
