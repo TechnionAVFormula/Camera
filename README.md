@@ -9,6 +9,10 @@
   - [Missions](#missions)
   - [Cones](#cones)
 
+The dataset contain boxes values like so:
+|class|x center in relative to total width| y center relative to total length|x width|y length|
+|--|--|--|--|--|--| 
+
 ## Hardware
 
 ## Relevant Repo's
