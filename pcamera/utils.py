@@ -1,8 +1,10 @@
-import cv2
+import cv2 as cv
 import matplotlib.pyplot as plt
 import pandas as pd
 import matplotlib.patches as patches
 import numpy as np
+import colorsys
+import copy
 
 
 class Image():
@@ -16,7 +18,7 @@ class Image():
         self.plotImageWithBox()
 
     def loadImage(self, showFlag):
-        self.image = cv2.imread(self.imageFilePath)
+        self.image = cv.imread(self.imageFilePath)
 
     def loadBoxPoints(self):
         """loadBoxPoints loads the boxes cooridantes into a struct
@@ -51,6 +53,19 @@ class Image():
         pass
 
     def imageHistogram(self):
+        HSV_image = copy.copy(self.image)
+        hsv = cv.cvtColor(HSV_image, cv.COLOR_BGR2HSV)
+        # channels
+        ch1, ch2, ch3 = cv.split(hsv)
+        cv.imshow('original', self.image)
+        # cv.imshow('HSV - h', ch1)
+        cv.imshow('HSV - s', ch2)
+        # cv.imshow('HSV - v', ch3)
+        # print(hsv)
+        hist_ch2 = cv.calcHist(ch2, [0], None, [256], [0,256])
+        # hist_ch3 = cv.calcHist(ch3, [0], None, [256], [0,256])
+        plt.plot(hist_ch2)
+        plt.show()
         pass
 
 
@@ -65,6 +80,7 @@ class Images():
         pass
 
 
-path = 'Cone Detection/yolo_cones/data/dataset/in5_0030'
+path = 'yolo_cones/data/Combo_img/in5_0030'
 image = Image(path)
+image.imageHistogram()
 print('Done')
