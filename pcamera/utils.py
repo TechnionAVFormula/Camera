@@ -53,13 +53,22 @@ class Image():
         pass
 
     def imageHistogram(self):
+        cv.imshow("Original image before HSV", self.image)
         HSV_image = copy.copy(self.image)
         hsv = cv.cvtColor(HSV_image, cv.COLOR_BGR2HSV)
+        blur_hsv = cv.GaussianBlur(hsv, (3,3), 0)
+        cv.imshow("blurred", blur_hsv)
         # channels
-        ch1, ch2, ch3 = cv.split(hsv)
+        ch1, ch2, ch3 = cv.split(blur_hsv)
+        # range blue color
+        blue_color_l = (0,0,0)
+        blue_color_d = (150,270,80)
+        mask = cv.inRange(blur_hsv, blue_color_l, blue_color_d)
+        new_S = cv.bitwise_and(blur_hsv, blur_hsv, mask=mask)
+        cv.imshow('blue', new_S)
         cv.imshow('original', self.image)
         # cv.imshow('HSV - h', ch1)
-        cv.imshow('HSV - s', ch2)
+        # cv.imshow('HSV - s', ch2)
         # cv.imshow('HSV - v', ch3)
         # print(hsv)
         hist_ch2 = cv.calcHist(ch2, [0], None, [256], [0,256])
