@@ -1,4 +1,4 @@
-import cv2 as cv
+import cv2
 import matplotlib.pyplot as plt
 import pandas as pd
 import matplotlib.patches as patches
@@ -18,7 +18,7 @@ class Image():
         self.plotImageWithBox()
 
     def loadImage(self, showFlag):
-        self.image = cv.imread(self.imageFilePath)
+        self.image = cv2.imread(self.imageFilePath)
 
     def loadBoxPoints(self):
         """loadBoxPoints loads the boxes cooridantes into a struct
@@ -53,29 +53,80 @@ class Image():
         pass
 
     def imageHistogram(self):
-        cv.imshow("Original image before HSV", self.image)
-        HSV_image = copy.copy(self.image)
-        hsv = cv.cvtColor(HSV_image, cv.COLOR_BGR2HSV)
-        blur_hsv = cv.GaussianBlur(hsv, (3,3), 0)
-        cv.imshow("blurred", blur_hsv)
+        cv2.imshow("Original image before HSV", self.image)
+        RGB_image = copy.copy(self.image)
+
+        hsv = cv2.cvtColor(RGB_image, cv2.COLOR_BGR2HSV)
+        blur_hsv = cv2.GaussianBlur(hsv, (5,5), 0)
         # channels
-        ch1, ch2, ch3 = cv.split(blur_hsv)
+        ch1, ch2, ch3 = cv2.split(blur_hsv)
         # range blue color
         blue_color_l = (0,0,0)
-        blue_color_d = (150,270,80)
-        mask = cv.inRange(blur_hsv, blue_color_l, blue_color_d)
-        new_S = cv.bitwise_and(blur_hsv, blur_hsv, mask=mask)
-        cv.imshow('blue', new_S)
-        cv.imshow('original', self.image)
-        # cv.imshow('HSV - h', ch1)
-        # cv.imshow('HSV - s', ch2)
-        # cv.imshow('HSV - v', ch3)
-        # print(hsv)
-        hist_ch2 = cv.calcHist(ch2, [0], None, [256], [0,256])
-        # hist_ch3 = cv.calcHist(ch3, [0], None, [256], [0,256])
+        blue_color_d = (240,270,100)
+        
+        mask = cv2.inRange(blur_hsv, blue_color_l, blue_color_d)
+        new_S = cv2.bitwise_and(blur_hsv, blur_hsv, mask=mask)
+        cv2.imshow('blue', new_S)
+        hist_ch2 = cv2.calcHist(ch2, [0], None, [256], [0,256])
         plt.plot(hist_ch2)
         plt.show()
         pass
+
+    def imageShowRectRGB(self):
+        imgB = copy.copy(self.image)
+        imgY = copy.copy(self.image)
+
+        blueLow = np.array([60, 0, 0])
+        blueHigh = np.array([230, 90, 50])
+        yellowLow = np.array([0, 80, 100])
+        yellowHigh  = np.array([50, 220, 240])
+
+        maskBlue = cv2.inRange(imgB, blueLow, blueHigh)
+        maskYellow = cv2.inRange(imgY, yellowLow, yellowHigh)
+        outputBlue = cv2.bitwise_and(imgB, imgB, mask = maskBlue)
+        outputYellow = cv2.bitwise_and(imgY, imgY, mask = maskYellow)
+        
+        # show the images
+        cv2.imshow("Blue", outputBlue)
+        cv2.imshow("Yellow", outputYellow)
+        
+        tempBlue = cv2.cvtColor(outputBlue, cv2.COLOR_BGR2GRAY) 
+        tempYellow = cv2.cvtColor(outputYellow, cv2.COLOR_BGR2GRAY)
+        edgedBlue = cv2.Canny(tempBlue, 30, 200)
+        edgedYellow = cv2.Canny(tempYellow, 30, 200) 
+
+        contoursB, hierarchyB = cv2.findContours(edgedBlue, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE) 
+        contours_polyB = [None]*len(contoursB)
+        boundRectB = [None]*len(contoursB)
+
+        contoursY, hierarchyY = cv2.findContours(edgedYellow, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE) 
+        contours_polyY = [None]*len(contoursY)
+        boundRectY = [None]*len(contoursY)
+
+        for i, c in enumerate(contoursB):
+            contours_polyB[i] = cv2.approxPolyDP(c, 3, True)
+            boundRectB[i] = cv2.boundingRect(contours_polyB[i])
+
+        for i, c in enumerate(contoursY):
+            contours_polyY[i] = cv2.approxPolyDP(c, 3, True)
+            boundRectY[i] = cv2.boundingRect(contours_polyY[i])
+               
+        # drawingBlue = np.zeros((edgedBlue.shape[0], edgedBlue.shape[1], 3), dtype=np.uint8)
+        # drawingYellow = np.zeros((edgedYellow.shape[0], edgedYellow.shape[1], 3), dtype=np.uint8)
+    
+        for i in range(len(contoursB)):
+            color = (0, 0, 255)
+            cv2.rectangle(self.image, (int(boundRectB[i][0]), int(boundRectB[i][1])), \
+            (int(boundRectB[i][0]+boundRectB[i][2]), int(boundRectB[i][1]+boundRectB[i][3])), color, 2)
+
+        for i in range(len(contoursY)):
+            color = (0, 0, 255)
+            cv2.rectangle(self.image, (int(boundRectY[i][0]), int(boundRectY[i][1])), \
+            (int(boundRectY[i][0]+boundRectY[i][2]), int(boundRectY[i][1]+boundRectY[i][3])), color, 2)
+
+        cv2.imshow('drawing', self.image)
+
+        cv2.waitKey(0)
 
 
 class Images():
@@ -91,5 +142,6 @@ class Images():
 
 path = 'yolo_cones/data/Combo_img/in5_0030'
 image = Image(path)
-image.imageHistogram()
+# image.imageHistogram()
+image.imageShowRectRGB()
 print('Done')
