@@ -72,6 +72,68 @@ class Image():
         plt.show()
         pass
 
+
+    def imageShowRectHSV(self):
+        imgB = cv2.cvtColor(self.image, cv2.COLOR_BGR2HSV)
+        imgY = cv2.cvtColor(self.image, cv2.COLOR_BGR2HSV)
+
+        blueLow = np.array([90, 50, 50])
+        blueHigh = np.array([150, 255, 255])
+        yellowLow = np.array([20, 100, 100])
+        yellowHigh  = np.array([40, 255, 255])
+
+        maskBlue = cv2.inRange(imgB, blueLow, blueHigh)
+        maskBlue2 = cv2.dilate(maskBlue, np.ones((5,5), np.uint8))
+        maskBlue3 = cv2.erode(maskBlue2, np.ones((5,5), np.uint8))
+        maskYellow = cv2.inRange(imgY, yellowLow, yellowHigh)
+        maskYellow2 = cv2.dilate(maskYellow, np.ones((5,5), np.uint8))
+        maskYellow3 = cv2.erode(maskYellow2, np.ones((5,5), np.uint8))
+        outputBlue = cv2.bitwise_and(imgB, imgB, mask = maskBlue3)
+        outputYellow = cv2.bitwise_and(imgY, imgY, mask = maskYellow3)
+        
+        # show the images
+        cv2.imshow("Blue", outputBlue)
+        cv2.imshow("Yellow", outputYellow)
+        
+        tempBlue = cv2.cvtColor(outputBlue, cv2.COLOR_BGR2GRAY) 
+        tempYellow = cv2.cvtColor(outputYellow, cv2.COLOR_BGR2GRAY)
+        edgedBlue = cv2.Canny(tempBlue, 30, 300)
+        edgedYellow = cv2.Canny(tempYellow, 30, 300) 
+
+        contoursB, hierarchyB = cv2.findContours(edgedBlue, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE) 
+        contours_polyB = [None]*len(contoursB)
+        boundRectB = [None]*len(contoursB)
+
+        contoursY, hierarchyY = cv2.findContours(edgedYellow, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE) 
+        contours_polyY = [None]*len(contoursY)
+        boundRectY = [None]*len(contoursY)
+
+        for i, c in enumerate(contoursB):
+            contours_polyB[i] = cv2.approxPolyDP(c, 3, True)
+            boundRectB[i] = cv2.boundingRect(contours_polyB[i])
+
+        for i, c in enumerate(contoursY):
+            contours_polyY[i] = cv2.approxPolyDP(c, 3, True)
+            boundRectY[i] = cv2.boundingRect(contours_polyY[i])
+               
+        # drawingBlue = np.zeros((edgedBlue.shape[0], edgedBlue.shape[1], 3), dtype=np.uint8)
+        # drawingYellow = np.zeros((edgedYellow.shape[0], edgedYellow.shape[1], 3), dtype=np.uint8)
+    
+        for i in range(len(contoursB)):
+            color = (0, 0, 255)
+            cv2.rectangle(self.image, (int(boundRectB[i][0]), int(boundRectB[i][1])), \
+            (int(boundRectB[i][0]+boundRectB[i][2]), int(boundRectB[i][1]+boundRectB[i][3])), color, 2)
+
+        for i in range(len(contoursY)):
+            color = (0, 0, 255)
+            cv2.rectangle(self.image, (int(boundRectY[i][0]), int(boundRectY[i][1])), \
+            (int(boundRectY[i][0]+boundRectY[i][2]), int(boundRectY[i][1]+boundRectY[i][3])), color, 2)
+
+        cv2.imshow('drawing', self.image)
+
+        cv2.waitKey(0)
+
+
     def imageShowRectRGB(self):
         imgB = copy.copy(self.image)
         imgY = copy.copy(self.image)
@@ -111,9 +173,6 @@ class Image():
             contours_polyY[i] = cv2.approxPolyDP(c, 3, True)
             boundRectY[i] = cv2.boundingRect(contours_polyY[i])
                
-        # drawingBlue = np.zeros((edgedBlue.shape[0], edgedBlue.shape[1], 3), dtype=np.uint8)
-        # drawingYellow = np.zeros((edgedYellow.shape[0], edgedYellow.shape[1], 3), dtype=np.uint8)
-    
         for i in range(len(contoursB)):
             color = (0, 0, 255)
             cv2.rectangle(self.image, (int(boundRectB[i][0]), int(boundRectB[i][1])), \
