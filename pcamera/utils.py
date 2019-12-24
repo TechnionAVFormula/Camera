@@ -1,5 +1,7 @@
 import cv2
 import matplotlib.pyplot as plt
+from PIL import Image as pilimage
+import sys, os
 import pandas as pd
 import matplotlib.patches as patches
 import matplotlib.image as mpimg
@@ -7,7 +9,7 @@ import numpy as np
 import colorsys
 import copy
 import os
-
+print(cv2.__version__)
 
 class Image():
     def __init__(self, filePath):
@@ -213,8 +215,22 @@ class Images():
     def totalHistogram(self):
         pass
 
-path = "Combo_img/in5_0020"
+path = "yolo_cones\data\Combo_img\in5_0001"
 image = Image(path)
 # image.imageHistogram()
 image.imageShowRectHSV(minimumRectangleArea=15)
+
+images = []
+image2 = pilimage.open('yolo_cones\data\Combo_img\in5_0001.png')
+images.append(image2)
+image2 = pilimage.open('yolo_cones\data\Combo_img\in5_0002.png')
+images.append(image2)
+image2 = pilimage.open('yolo_cones\data\Combo_img\in5_0003.png')
+images.append(image2)
+
+images[0].save('anicircle.gif', save_all=True, append_images=images[1:], duration=100, loop=10)
+im = pilimage.open('anicircle.gif')
+
+image = Image('anicircle')
+image.imageShowRectRGB()
 print('Done')
