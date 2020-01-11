@@ -16,16 +16,15 @@ class Image():
         self.imageFilePath = filePath + '.png'
         self.boxFilePath = filePath + '.txt'
         self.image = 0
+        self.idan_helper = []
         self.boxPoints = 0
         self.loadImage(False)
         self.loadBoxPoints()
-        # self.plotImageWithBox()
+        self.plotImageWithBox()
+        self.classifiedImage = 0
 
     def loadImage(self, showFlag):
         self.image = cv2.imread(self.imageFilePath)
-        if showFlag:
-            cv2.imshow('image', self.image)
-            cv2.waitKey(0)
 
     def loadBoxPoints(self):
         """loadBoxPoints loads the boxes cooridantes into a struct
@@ -59,6 +58,40 @@ class Image():
         print(count)
         pass
 
+    def imageMask(self):
+        for i in range(550,self.image.shape[0]):
+            for j in range(200,1120):
+                self.image[i][j] = (0,0,0)
+            pass
+        pass
+
+        for i in range(400,550):
+            for j in range(450,900):
+                self.image[i][j] = (0,0,0)
+            pass
+        pass
+
+        for i in range(0,200):
+            for j in range(self.image.shape[1]):
+                self.image[i][j] = (0,0,0)
+            pass
+        pass
+
+        for i in range(self.image.shape[0]):
+            for j in range(0,200):
+                self.image[i][j] = (0,0,0)
+            pass
+        pass
+
+        for i in range(self.image.shape[0]):
+            for j in range(1100,1280):
+                self.image[i][j] = (0,0,0)
+            pass
+        pass
+
+        #cv2.imshow("masked image", self.image)
+        #cv2.waitKey(0)
+
     def imageHistogram(self):
         cv2.imshow("Original image before HSV", self.image)
         rgbImage = copy.copy(self.image)
@@ -79,6 +112,56 @@ class Image():
         plt.show()
         pass
 
+
+    def imageHSV_ratio(self, showColorPlot=False):
+        imgB = self.image
+        imgY = self.image
+
+        cv2.split(imgB)
+        tempR = imgB[:,:,0]
+        tempG = imgB[:,:,1]
+        tempB = imgB[:,:,2]
+
+        for i in range(220, 450):
+            for j in range(320, 1020):
+                ratioR = tempR[i][j]
+                ratioG = tempG[i][j]
+                ratioB = tempB[i][j]
+                try:
+                    ratioT_B = float(ratioB) / float(ratioR + ratioB + ratioG)
+                    ratioT_G = float(ratioG) / float(ratioR + ratioB + ratioG)
+                    ratioT_R = float(ratioR) / float(ratioR + ratioB + ratioG)
+                    if (ratioT_B < 0.7 and ratioT_G < 0.85 and ratioT_R <= 1):
+                        self.image[i][j] = (0,0,0)
+                except ZeroDivisionError:
+                    ratioT = 0
+            pass
+        pass
+
+        selfGrey = cv2.cvtColor(self.image, cv2.COLOR_BGR2GRAY)
+        contoursB, hierarchyB = cv2.findContours(selfGrey, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+        contours_polyB = []
+        boundRectB = []
+        areasB = np.array([cv2.contourArea(countour) for countour in contoursB])
+        for i, c in enumerate(contoursB):
+            contours_polyB.append(cv2.approxPolyDP(c, 3, True))
+            if areasB[i] > 30 and areasB[i] < 140:
+               boundRectB.append(cv2.boundingRect(contours_polyB[i]))
+               self.idan_helper.append(cv2.boundingRect(contours_polyB[i]))
+        for i in range(len(boundRectB)):
+            color = (0, 0, 255)
+            cv2.rectangle(self.image, (int(boundRectB[i][0]), int(boundRectB[i][1])),
+              (int(boundRectB[i][0]+boundRectB[i][2]), int(boundRectB[i][1]+boundRectB[i][3])), color, 2)
+
+        cv2.imshow('image',self.image)
+        
+        cv2.waitKey(0)
+
+        print(contours_polyB[5])
+
+        pass
+
+
     def imageShowRectHSV(self, minimumRectangleArea=5, showColorPlot=False):
         imgB = cv2.cvtColor(self.image, cv2.COLOR_BGR2HSV)
         imgY = cv2.cvtColor(self.image, cv2.COLOR_BGR2HSV)
@@ -97,11 +180,6 @@ class Image():
         outputBlue = cv2.bitwise_and(imgB, imgB, mask=maskBlue3) ## TODO change to conv function
         outputYellow = cv2.bitwise_and(imgY, imgY, mask=maskYellow3) ## TODO change to conv function
 
-        # show the images
-        if showColorPlot:
-            cv2.imshow("Blue", outputBlue)
-            cv2.imshow("Yellow", outputYellow)
-
         tempBlue = cv2.cvtColor(outputBlue, cv2.COLOR_BGR2GRAY)
         tempYellow = cv2.cvtColor(outputYellow, cv2.COLOR_BGR2GRAY)
         edgedBlue = cv2.Canny(tempBlue, 30, 300)
@@ -112,8 +190,6 @@ class Image():
         contours_polyB = []
         boundRectB = []
         areasB = np.array([cv2.contourArea(countour) for countour in contoursB])
-        # plt.hist(areasB, bins=100)
-        # plt.show()
 
         contoursY, hierarchyY = cv2.findContours(
             edgedYellow, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
@@ -128,11 +204,8 @@ class Image():
 
         for i, c in enumerate(contoursY):
             contours_polyY.append(cv2.approxPolyDP(c, 3, True))
-            if areasY[i] >minimumRectangleArea:
+            if areasY[i] > minimumRectangleArea:
                 boundRectY.append(cv2.boundingRect(contours_polyY[i]))
-
-        # drawingBlue = np.zeros((edgedBlue.shape[0], edgedBlue.shape[1], 3), dtype=np.uint8)
-        # drawingYellow = np.zeros((edgedYellow.shape[0], edgedYellow.shape[1], 3), dtype=np.uint8)
 
         for i in range(len(boundRectB)):
             color = (0, 0, 255)
@@ -144,9 +217,10 @@ class Image():
             cv2.rectangle(self.image, (int(boundRectY[i][0]), int(boundRectY[i][1])),
                           (int(boundRectY[i][0]+boundRectY[i][2]), int(boundRectY[i][1]+boundRectY[i][3])), color, 2)
 
-        # plt.imshow(self.image)
-        # plt.show()
         cv2.imshow('image',self.image)
+        self.classifiedImage
+        print(len(boundRectB))
+        print(len(boundRectY))
         cv2.waitKey(0)
 
     def imageShowRectRGB(self):
@@ -217,8 +291,11 @@ class Images():
 
 path = "yolo_cones\data\Combo_img\in5_0001"
 image = Image(path)
-# image.imageHistogram()
-image.imageShowRectHSV(minimumRectangleArea=15)
+image.imageMask()
+# image.imageShowRectHSV(minimumRectangleArea=15)
+image.imageHSV_ratio()
+print("check struct  ")
+print(image.idan_helper)
 
 images = []
 image2 = pilimage.open('yolo_cones\data\Combo_img\in5_0001.png')
@@ -228,9 +305,9 @@ images.append(image2)
 image2 = pilimage.open('yolo_cones\data\Combo_img\in5_0003.png')
 images.append(image2)
 
-images[0].save('anicircle.gif', save_all=True, append_images=images[1:], duration=100, loop=10)
-im = pilimage.open('anicircle.gif')
+# images[0].save('anicircle.gif', save_all=True, append_images=images[1:], duration=100, loop=10)
+# im = pilimage.open('anicircle.gif')
 
-image = Image('anicircle')
-image.imageShowRectRGB()
+# image = Image('anicircle')
+# image.imageShowRectRGB()
 print('Done')
