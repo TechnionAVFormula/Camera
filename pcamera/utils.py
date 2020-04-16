@@ -9,7 +9,11 @@ import numpy as np
 import colorsys
 import copy
 import os
-print(cv2.__version__)
+import argparse
+import imutils
+import glob
+import time
+from sklearn.cluster import KMeans
 
 class Image():
     def __init__(self, filePath):
@@ -199,7 +203,7 @@ class Image():
 
         for i, c in enumerate(contoursB):
             contours_polyB.append(cv2.approxPolyDP(c, 3, True))
-            if areasB[i] >minimumRectangleArea:
+            if areasB[i] > minimumRectangleArea and areasB[i] < 1000:
                 boundRectB.append(cv2.boundingRect(contours_polyB[i]))
 
         for i, c in enumerate(contoursY):
@@ -207,20 +211,22 @@ class Image():
             if areasY[i] > minimumRectangleArea:
                 boundRectY.append(cv2.boundingRect(contours_polyY[i]))
 
-        for i in range(len(boundRectB)):
+        kmeans = KMeans(n_clusters = 4, random_state=0).fit(boundRectB)
+        for i in range(len(kmeans.cluster_centers_)):
             color = (0, 0, 255)
-            cv2.rectangle(self.image, (int(boundRectB[i][0]), int(boundRectB[i][1])),
-                          (int(boundRectB[i][0]+boundRectB[i][2]), int(boundRectB[i][1]+boundRectB[i][3])), color, 2)
+            cv2.rectangle(self.image, (int(kmeans.cluster_centers_[i][0]), int(kmeans.cluster_centers_[i][1])),
+                          (int(kmeans.cluster_centers_[i][0]+kmeans.cluster_centers_[i][2]), 
+                          int(kmeans.cluster_centers_[i][1]+kmeans.cluster_centers_[i][3])), color, 2)
 
-        for i in range(len(boundRectY)):
+        kmeans = KMeans(n_clusters = 5, random_state=0).fit(boundRectY)
+        for i in range(len(kmeans.cluster_centers_)):
             color = (0, 0, 255)
-            cv2.rectangle(self.image, (int(boundRectY[i][0]), int(boundRectY[i][1])),
-                          (int(boundRectY[i][0]+boundRectY[i][2]), int(boundRectY[i][1]+boundRectY[i][3])), color, 2)
+            cv2.rectangle(self.image, (int(kmeans.cluster_centers_[i][0]), int(kmeans.cluster_centers_[i][1])),
+                          (int(kmeans.cluster_centers_[i][0]+kmeans.cluster_centers_[i][2]), 
+                          int(kmeans.cluster_centers_[i][1]+kmeans.cluster_centers_[i][3])), color, 2)
 
         cv2.imshow('image',self.image)
         self.classifiedImage
-        print(len(boundRectB))
-        print(len(boundRectY))
         cv2.waitKey(0)
 
     def imageShowRectRGB(self):
@@ -275,47 +281,70 @@ class Image():
                           (int(boundRectY[i][0]+boundRectY[i][2]), int(boundRectY[i][1]+boundRectY[i][3])), color, 2)
 
         cv2.imshow('drawing', self.image)
-
         cv2.waitKey(0)
 
     def maskTemplate(self):
-        img = self.image.copy()
-        mask_temp = cv2.imread('blue_cone.png')
-        mask = mask_temp.copy()
+        image = self.image.copy()
 
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-        mask = cv2.cvtColor(mask_temp, cv2.COLOR_BGR2GRAY)
+        template_y = cv2.imread('yolo_cones/templates/Y2-50.png')
+        template_b1 = cv2.imread('yolo_cones/templates/B-80.jpg')
+        template_b2 = cv2.imread('yolo_cones/templates/B-90.jpg')
+        template_b3 = cv2.imread('yolo_cones/templates/B-100.png')  
 
-        w, h = mask.shape[: : -1]
+        start_time = time.time()
+        method = cv2.TM_CCOEFF_NORMED
 
-        # All the 6 methods for comparison in a list
-        methods = ['cv2.TM_CCOEFF', 'cv2.TM_CCOEFF_NORMED', 'cv2.TM_CCORR',
-                   'cv2.TM_CCORR_NORMED', 'cv2.TM_SQDIFF', 'cv2.TM_SQDIFF_NORMED']
+        res_y = cv2.matchTemplate(image, template_y, method)
+        threshold = 0.50
+        max_val = 1
 
-        for meth in methods:
-           method = eval(meth)
+        h_y, w_y = template_y.shape[:2]
+        while max_val > threshold:
+            min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res_y)
 
-            # Apply template Matching
-           res = cv2.matchTemplate(img,mask,method)
-           min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
+            if max_val > threshold:
+                res_y[max_loc[1]-h_y//2:max_loc[1]+h_y//2+1, max_loc[0]-w_y//2:max_loc[0]+w_y//2+1] = 0   
+                image = cv2.rectangle(image,(max_loc[0],max_loc[1]), (max_loc[0]+w_y+1, max_loc[1]+h_y+1), (0,255,0) )
+                
+        res_b = cv2.matchTemplate(image, template_b1, method)
+        threshold = 0.60
+        max_val = 1
 
-            # If the method is TM_SQDIFF or TM_SQDIFF_NORMED, take minimum
-           if method in [cv2.TM_SQDIFF, cv2.TM_SQDIFF_NORMED]:
-               top_left = min_loc
-           else:
-               top_left = max_loc
-               bottom_right = (top_left[0] + w, top_left[1] + h)
-            #   bottom_right = (top_left[0] + 5, top_left[1] + 5)
+        h_b, w_b = template_b1.shape[:2]
+        while max_val > threshold:
+            min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res_b)
 
-           cv2.rectangle(img,top_left, bottom_right, 255, 2)
+            if max_val > threshold:
+                res_b[max_loc[1]-h_b//2:max_loc[1]+h_b//2+1, max_loc[0]-w_b//2:max_loc[0]+w_b//2+1] = 0   
+                image = cv2.rectangle(image,(max_loc[0],max_loc[1]), (max_loc[0]+w_b+1, max_loc[1]+h_b+1), (0,255,0) )
 
-           plt.subplot(121),plt.imshow(res,cmap = 'gray')
-           plt.title('Matching Result'), plt.xticks([]), plt.yticks([])
-           plt.subplot(122),plt.imshow(img,cmap = 'gray')
-           plt.title('Detected Point'), plt.xticks([]), plt.yticks([])
-           plt.suptitle(meth)
+        res_b = cv2.matchTemplate(image, template_b2, method)
+        h_b, w_b = template_b2.shape[:2]
+        max_val = 1
+        while max_val > threshold:
+            min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res_b)
 
-           plt.show()
+            if max_val > threshold:
+                res_b[max_loc[1]-h_b//2:max_loc[1]+h_b//2+1, max_loc[0]-w_b//2:max_loc[0]+w_b//2+1] = 0   
+                image = cv2.rectangle(image,(max_loc[0],max_loc[1]), (max_loc[0]+w_b+1, max_loc[1]+h_b+1), (0,255,0) )
+
+        res_b = cv2.matchTemplate(image, template_b3, method)
+        h_b, w_b = template_b3.shape[:2]
+        threshold = 0.65
+        max_val = 1
+        while max_val > threshold:
+            min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res_b)
+
+            if max_val > threshold:
+                res_b[max_loc[1]-h_b//2:max_loc[1]+h_b//2+1, max_loc[0]-w_b//2:max_loc[0]+w_b//2+1] = 0   
+                image = cv2.rectangle(image,(max_loc[0],max_loc[1]), (max_loc[0]+w_b+1, max_loc[1]+h_b+1), (0,255,0) )
+            
+        end_time = time.time()
+        print("time : {}".format(end_time - start_time))
+        plt.imshow(image,cmap = 'gray')
+        plt.title('Detected Point'), plt.xticks([]), plt.yticks([])
+        plt.show()
+
 
 class Images():
     def __init__(self):
@@ -329,26 +358,9 @@ class Images():
 
 
 
-path = "yolo_cones\data\Combo_img\in8_0010"
+path = "yolo_cones\data\Combo_img\in5_0001"
 image = Image(path)
-image.maskTemplate()
-# image.imageMask()
-# image.imageShowRectHSV(minimumRectangleArea=15)
-# image.imageHSV_ratio()
-# print("check struct  ")
-# print(image.idan_helper)
-
-images = []
-image2 = pilimage.open('yolo_cones\data\Combo_img\in5_0001.png')
-images.append(image2)
-image2 = pilimage.open('yolo_cones\data\Combo_img\in5_0002.png')
-images.append(image2)
-image2 = pilimage.open('yolo_cones\data\Combo_img\in5_0003.png')
-images.append(image2)
-
-# images[0].save('anicircle.gif', save_all=True, append_images=images[1:], duration=100, loop=10)
-# im = pilimage.open('anicircle.gif')
-
-# image = Image('anicircle')
-# image.imageShowRectRGB()
+image.imageMask()
+#image.maskTemplate()
+image.imageShowRectHSV()
 print('Done')
